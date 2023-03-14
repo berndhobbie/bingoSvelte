@@ -1,38 +1,30 @@
 <script lang="ts">
   import "./app.css";
+  import Header from "./components/Header.svelte";
+  import NumberGrid from "./components/NumberGrid.svelte";
   import { BingoCard } from "./lib/bingoCard";
+  import { onMount } from "svelte";
+  let bingoCard: BingoCard;
 
-  const bingoCard = new BingoCard();
-  bingoCard.generate();
-  console.log(bingoCard);
+  onMount(() => {
+    genNewCard();
+  });
+
+  const genNewCard = () => {
+    const newBingoCard = new BingoCard();
+    newBingoCard.generate();
+    bingoCard = newBingoCard;
+  };
 </script>
 
-<!-- header -->
-<div class="grid grid-cols-5 grid-rows-1 w-80">
-  {#each bingoCard.card as letter}
-    {#each letter.name as header}
-      <div
-        class="flex justify-center items-center border border-black p-2 bg-blue-700 text-white text-4xl font-extrabold h-16 w-16"
-      >
-        {#if header}
-          {header}
-        {/if}
-      </div>
-    {/each}
-  {/each}
-</div>
-
-<!-- numbers -->
-<div class="grid grid-cols-5 grid-rows-5 grid-flow-col w-80">
-  {#each bingoCard.card as letter}
-    {#each letter.numbers as cell}
-      <div
-        class="border border-black p-2 font-extrabold flex justify-center items-center h-16 w-16 text-2xl"
-      >
-        {#if cell}
-          {cell}
-        {/if}
-      </div>
-    {/each}
-  {/each}
-</div>
+{#if bingoCard}
+  <div class="flex flex-col p-2 items-center">
+    <h1 class="text-5xl mb-4 font-mono">The Bingo Generator</h1>
+    <Header {bingoCard} />
+    <NumberGrid {bingoCard} />
+    <button
+      class="bg-orange-500 hover:bg-orange-400 p-2 rounded-md w-80 text-lg font-bold mt-2"
+      on:click={() => genNewCard()}>New Numbers</button
+    >
+  </div>
+{/if}
