@@ -1,6 +1,11 @@
+interface BingoNumber {
+  number: number;
+  isDrawn: boolean;
+}
+
 interface NumberRow {
   name: string;
-  numbers: number[];
+  numbers: BingoNumber[];
 }
 
 export class BingoCard {
@@ -30,15 +35,31 @@ export class BingoCard {
     this.o.numbers = this.generateNumbers(61, 75);
   }
 
-  private generateNumbers(min: number, max: number): number[] {
-    const numbers: number[] = [];
-    for (let i = 0; i < 5; i++) {
-      let random = Math.floor(Math.random() * (max - min + 1)) + min;
-      while (numbers.includes(random)) {
-        random = Math.floor(Math.random() * (max - min + 1)) + min;
-      }
-      numbers.push(random);
+  private generateNumbers(min: number, max: number): BingoNumber[] {
+    const bingoNumbers: BingoNumber[] = [];
+    const allNumbers: number[] = [];
+    for (let i = min; i <= max; i++) {
+      allNumbers.push(i);
     }
-    return numbers;
+
+    for (let i = 0; i < 5; i++) {
+      const randomIndex = Math.floor(Math.random() * allNumbers.length);
+      const randomNum = allNumbers[randomIndex];
+      bingoNumbers.push({ number: randomNum, isDrawn: false });
+      allNumbers.splice(randomIndex, 1);
+    }
+
+    return bingoNumbers;
   }
+
+  markNumbers = (winnerNumbers: number[]): void => {
+    this.card.forEach((row) => {
+      row.numbers.forEach((num) => {
+        if (winnerNumbers.includes(num.number)) {
+          num.isDrawn = true;
+        }
+      });
+    });
+    console.log(this.card);
+  };
 }

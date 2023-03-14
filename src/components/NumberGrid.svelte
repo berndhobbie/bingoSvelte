@@ -8,8 +8,10 @@
       <div
         class="border border-black p-2 font-extrabold flex justify-center items-center h-16 w-16 text-3xl"
       >
-        {#if cell}
-          {cell}
+        {#if cell.number}
+          <span class={cell.isDrawn ? "text-green-900" : "text-black"}
+            >{cell.number}</span
+          >
         {/if}
       </div>
     {/each}
