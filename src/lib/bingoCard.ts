@@ -1,65 +1,90 @@
-interface BingoNumber {
-  number: number;
-  isDrawn: boolean;
-}
-
-interface NumberRow {
-  name: string;
-  numbers: BingoNumber[];
-}
-
 export class BingoCard {
-  b: NumberRow;
-  i: NumberRow;
-  n: NumberRow;
-  g: NumberRow;
-  o: NumberRow;
+  private static readonly ROW_SIZE = 5;
+  private static readonly COLUMN_SIZE = 5;
+  private static readonly COLUMN_RANGE = 15;
 
-  constructor() {
-    this.b = { name: "B", numbers: [] };
-    this.i = { name: "I", numbers: [] };
-    this.n = { name: "N", numbers: [] };
-    this.g = { name: "G", numbers: [] };
-    this.o = { name: "O", numbers: [] };
+  private cards: number[][]; // define the 'cards' property with type annotation
+  private drawnNumbers: Set<number>;
+
+  constructor(numberOfCards: number) {
+    this.drawnNumbers = new Set<number>();
+    this.cards = Array.from({ length: numberOfCards }, () =>
+      this.generateCard()
+    );
   }
 
-  get card(): NumberRow[] {
-    return [this.b, this.i, this.n, this.g, this.o];
-  }
+  getCard(cardIndex: number): number[][] {
+    const card = this.cards[cardIndex];
+    const card2DArray: number[][] = [];
 
-  generate() {
-    this.b.numbers = this.generateNumbers(1, 15);
-    this.i.numbers = this.generateNumbers(16, 30);
-    this.n.numbers = this.generateNumbers(31, 45);
-    this.g.numbers = this.generateNumbers(46, 60);
-    this.o.numbers = this.generateNumbers(61, 75);
-  }
-
-  private generateNumbers(min: number, max: number): BingoNumber[] {
-    const bingoNumbers: BingoNumber[] = [];
-    const allNumbers: number[] = [];
-    for (let i = min; i <= max; i++) {
-      allNumbers.push(i);
+    for (let row = 0; row < BingoCard.ROW_SIZE; row++) {
+      const rowNumbers: number[] = [];
+      for (let col = 0; col < BingoCard.COLUMN_SIZE; col++) {
+        const number = card[col + row * BingoCard.COLUMN_SIZE];
+        rowNumbers.push(number);
+      }
+      card2DArray.push(rowNumbers);
     }
-
-    for (let i = 0; i < 5; i++) {
-      const randomIndex = Math.floor(Math.random() * allNumbers.length);
-      const randomNum = allNumbers[randomIndex];
-      bingoNumbers.push({ number: randomNum, isDrawn: false });
-      allNumbers.splice(randomIndex, 1);
-    }
-
-    return bingoNumbers;
+    return card2DArray;
   }
 
-  markNumbers = (winnerNumbers: number[]): void => {
-    this.card.forEach((row) => {
-      row.numbers.forEach((num) => {
-        if (winnerNumbers.includes(num.number)) {
-          num.isDrawn = true;
-        }
-      });
-    });
-    console.log(this.card);
-  };
+  generateCard() {
+    const card = [];
+    for (let col = 0; col < BingoCard.COLUMN_SIZE; col++) {
+      const columnNumbers = this.generateUniqueNumbers(BingoCard.ROW_SIZE, col);
+      card.push(...columnNumbers);
+    }
+    return card;
+  }
+
+  generateUniqueNumbers(count, columnIndex) {
+    const numbers = new Set();
+    const columnMin = columnIndex * BingoCard.COLUMN_RANGE + 1;
+    const columnMax = (columnIndex + 1) * BingoCard.COLUMN_RANGE;
+    while (numbers.size < count) {
+      const columnNumber = this.getRandomNumber(columnMin, columnMax);
+      if (!numbers.has(columnNumber)) {
+        numbers.add(columnNumber);
+      }
+    }
+    return Array.from(numbers);
+  }
+
+  getRandomNumber(min, max) {
+    let randomNumber;
+    do {
+      randomNumber = Math.floor(Math.random() * (max - min + 1)) + min;
+    } while (this.drawnNumbers.has(randomNumber));
+    return randomNumber;
+  }
+
+  drawNumber() {
+    let randomNumber;
+    do {
+      randomNumber = this.getRandomNumber(
+        1,
+        BingoCard.COLUMN_RANGE * BingoCard.COLUMN_SIZE
+      );
+    } while (this.drawnNumbers.has(randomNumber));
+    this.drawnNumbers.add(randomNumber);
+    return randomNumber;
+  }
+
+  checkBingoCard(cardIndex) {
+    const card = this.cards[cardIndex];
+    return card.every((number) => this.drawnNumbers.has(number));
+  }
+
+  displayCard(cardIndex) {
+    const card = this.cards[cardIndex];
+    let output = "";
+    for (let col = 0; col < BingoCard.COLUMN_SIZE; col++) {
+      for (let row = 0; row < BingoCard.ROW_SIZE; row++) {
+        const number = card[col + row * BingoCard.COLUMN_SIZE];
+        output += `${number.toString().padStart(2, "0")} `;
+      }
+      output += "\n";
+    }
+    return output;
+  }
 }
