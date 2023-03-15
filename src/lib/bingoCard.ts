@@ -59,17 +59,73 @@ export class BingoCard {
 
   drawNumber() {
     let randomNumber;
-    do {
-      randomNumber = this.getRandomNumber(
-        1,
-        BingoCard.COLUMN_RANGE * BingoCard.COLUMN_SIZE
-      );
-    } while (this.drawnNumbers.has(randomNumber));
-    this.drawnNumbers.add(randomNumber);
+    const totalPossibleNumbers = BingoCard.COLUMN_RANGE * BingoCard.COLUMN_SIZE;
+
+    if (this.drawnNumbers.size < totalPossibleNumbers) {
+      do {
+        randomNumber = this.getRandomNumber(1, totalPossibleNumbers);
+      } while (this.drawnNumbers.has(randomNumber));
+      this.drawnNumbers.add(randomNumber);
+    } else {
+      console.warn("All possible numbers have already been drawn.");
+      return null;
+    }
+
     return randomNumber;
   }
 
   checkBingoCard() {
     return this.card.every((number) => this.drawnNumbers.has(number));
+  }
+
+  checkBingo(): boolean {
+    const card2DArray = this.getCard();
+
+    // Check rows
+    for (const row of card2DArray) {
+      if (row.every((number) => this.drawnNumbers.has(number))) {
+        return true;
+      }
+    }
+
+    // Check columns
+    for (let col = 0; col < BingoCard.COLUMN_SIZE; col++) {
+      let isBingo = true;
+      for (let row = 0; row < BingoCard.ROW_SIZE; row++) {
+        if (!this.drawnNumbers.has(card2DArray[row][col])) {
+          isBingo = false;
+          break;
+        }
+      }
+      if (isBingo) {
+        return true;
+      }
+    }
+
+    // Check diagonal top-left to bottom-right
+    let isDiagonalBingo = true;
+    for (let i = 0; i < BingoCard.ROW_SIZE; i++) {
+      if (!this.drawnNumbers.has(card2DArray[i][i])) {
+        isDiagonalBingo = false;
+        break;
+      }
+    }
+    if (isDiagonalBingo) {
+      return true;
+    }
+
+    // Check diagonal top-right to bottom-left
+    isDiagonalBingo = true;
+    for (let i = 0; i < BingoCard.ROW_SIZE; i++) {
+      if (!this.drawnNumbers.has(card2DArray[i][BingoCard.ROW_SIZE - 1 - i])) {
+        isDiagonalBingo = false;
+        break;
+      }
+    }
+    if (isDiagonalBingo) {
+      return true;
+    }
+
+    return false;
   }
 }
