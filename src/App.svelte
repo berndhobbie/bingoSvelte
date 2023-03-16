@@ -2,29 +2,41 @@
   import "./app.css";
   import NumberGrid from "./components/NumberGrid.svelte";
   import { BingoCard } from "./lib/bingoCard";
+  import type { BingoLine } from "./lib/bingoCard";
   import { onMount } from "svelte";
   import { drawnNumbers } from "./lib/store";
-  import { fly } from "svelte/transition";
 
-  let cardNumbers: number[][] = [];
+  let cardNumbers1: number[][] = [];
+  let cardNumbers2: number[][] = [];
+  let bingoLines1: BingoLine[] = [];
+  let bingoLines2: BingoLine[] = [];
   let drawnNumber: number;
-  let bingoCard: BingoCard;
-  let isBingo = false;
+  let bingoCard1: BingoCard;
+  let bingoCard2: BingoCard;
+  let isBingo1 = false;
+  let isBingo2 = false;
   let autoDrawInterval: ReturnType<typeof setInterval> | null = null;
   let allNumbersDrawn = false;
-  let autoDrawIntervalTime = 50;
+  let autoDrawIntervalTime = 500;
 
   $: {
     allNumbersDrawn = drawnNumber === null;
   }
 
   onMount(() => {
-    genNewCard();
+    startGame();
   });
 
+  const startGame = () => {
+    genNewCard();
+    autoDraw();
+  };
+
   const genNewCard = () => {
-    bingoCard = new BingoCard();
-    cardNumbers = bingoCard.getCard();
+    bingoCard1 = new BingoCard();
+    bingoCard2 = new BingoCard();
+    cardNumbers1 = bingoCard1.getCard();
+    cardNumbers2 = bingoCard2.getCard();
     drawnNumbers.set(new Set<number>());
 
     if (autoDrawInterval) {
@@ -34,7 +46,7 @@
   };
 
   const drawNumber = () => {
-    drawnNumber = bingoCard.drawNumber();
+    drawnNumber = bingoCard1.drawNumber();
     if (drawnNumber === null) {
       if (autoDrawInterval) {
         clearInterval(autoDrawInterval);
@@ -52,7 +64,7 @@
     if (autoDrawInterval === null) {
       autoDrawInterval = setInterval(() => {
         drawNumber();
-        if (isBingo) {
+        if (isBingo1 || isBingo2) {
           clearInterval(autoDrawInterval);
           autoDrawInterval = null;
         }
@@ -64,55 +76,71 @@
   };
 
   $: {
-    if (bingoCard) {
-      bingoCard.getDrawnNumbers().clear();
+    if (bingoCard1 && bingoCard2) {
+      bingoCard1.getDrawnNumbers().clear();
+      bingoCard2.getDrawnNumbers().clear();
       for (const number of $drawnNumbers) {
-        bingoCard.getDrawnNumbers().add(number);
+        bingoCard1.getDrawnNumbers().add(number);
+        bingoCard2.getDrawnNumbers().add(number);
       }
-      isBingo = bingoCard.checkBingo();
+      const result1 = bingoCard1.checkBingo();
+      const result2 = bingoCard2.checkBingo();
+      isBingo1 = result1.hasBingo;
+      isBingo2 = result2.hasBingo;
+      bingoLines1 = result1.lines;
+      bingoLines2 = result2.lines;
     }
   }
 </script>
 
-{#if cardNumbers && bingoCard}
+<div>
   <div class="flex flex-col p-2 items-center">
-    <h1 class="text-5xl mb-4 font-mono">The Bingo Generator</h1>
-    <NumberGrid {cardNumbers} {drawnNumbers} />
-    <p>Drawn number: {drawnNumber || "None"}</p>
-    <p>{isBingo ? "Bingo!" : "No Bingo"}</p>
-    {#if isBingo}
-      <h1
-        class="text-5xl mb-4 font-mono"
-        transition:fly={{ delay: 0, duration: 1000, x: 0, y: -50, opacity: 0 }}
-        style="opacity: {isBingo ? 1 : 0};"
-      >
-        Congratulations! 🎉
-      </h1>
+    <h1 class="text-5xl mb-4 font-mono">Two Player Bingo Game</h1>
+    <div class="flex flex-row space-x-8">
+      {#if cardNumbers1 && bingoCard1}
+        <div class="flex flex-col items-center">
+          <h2 class="text-3xl mb-4">Player 1</h2>
+          <NumberGrid
+            cardNumbers={cardNumbers1}
+            {drawnNumbers}
+            bingoLines={bingoLines1}
+          />
+          <p>{isBingo1 ? "Bingo!" : "No Bingo"}</p>
+        </div>
+      {/if}
+      {#if cardNumbers2 && bingoCard2}
+        <div class="flex flex-col items-center">
+          <h2 class="text-3xl mb-4">Player 2</h2>
+          <NumberGrid
+            cardNumbers={cardNumbers2}
+            {drawnNumbers}
+            bingoLines={bingoLines2}
+          />
+          <p>{isBingo2 ? "Bingo!" : "No Bingo"}</p>
+        </div>
+      {/if}
+    </div>
+
+    <button
+      class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 mt-8 rounded"
+      on:click={startGame}
+    >
+      Start New Game
+    </button>
+    <button
+      class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 mt-4 rounded"
+      on:click={autoDraw}
+    >
+      {autoDrawInterval === null ? "Start Auto Draw" : "Stop Auto Draw"}
+    </button>
+    {#if allNumbersDrawn}
+      <p class="text-xl mt-4">All numbers have been drawn!</p>
     {/if}
+    <div class="mt-4 flex flex-col justify-center items-center">
+      <h2 class="text-2xl mb-2">Drawn Numbers:</h2>
+      <p class="text-xl">
+        {Array.from($drawnNumbers).join(", ") || "None"}
+      </p>
+    </div>
   </div>
-{/if}
-
-<div class="flex justify-center space-x-4 my-4">
-  <button
-    class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-    on:click={genNewCard}
-  >
-    New Card
-  </button>
-  <button
-    class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
-    on:click={drawNumber}
-  >
-    Draw Number
-  </button>
-  <button
-    class="bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
-    on:click={autoDraw}
-  >
-    AutoDraw
-  </button>
 </div>
-
-{#if allNumbersDrawn}
-  <p class="text-red-600">All possible numbers have been drawn.</p>
-{/if}

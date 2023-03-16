@@ -1,3 +1,12 @@
+export type BingoLine = {
+  type: "row" | "column" | "diagonal";
+  index: number;
+};
+export type BingoResult = {
+  hasBingo: boolean;
+  lines: BingoLine[];
+};
+
 export class BingoCard {
   private static readonly ROW_SIZE = 5;
   private static readonly COLUMN_SIZE = 5;
@@ -78,13 +87,17 @@ export class BingoCard {
     return this.card.every((number) => this.drawnNumbers.has(number));
   }
 
-  checkBingo(): boolean {
+  checkBingo(): BingoResult {
     const card2DArray = this.getCard();
+    let hasBingo = false;
+    let lines: BingoLine[] = [];
 
     // Check rows
-    for (const row of card2DArray) {
+    for (let rowIndex = 0; rowIndex < card2DArray.length; rowIndex++) {
+      const row = card2DArray[rowIndex];
       if (row.every((number) => this.drawnNumbers.has(number))) {
-        return true;
+        hasBingo = true;
+        lines.push({ type: "row", index: rowIndex });
       }
     }
 
@@ -98,7 +111,8 @@ export class BingoCard {
         }
       }
       if (isBingo) {
-        return true;
+        hasBingo = true;
+        lines.push({ type: "column", index: col });
       }
     }
 
@@ -111,7 +125,8 @@ export class BingoCard {
       }
     }
     if (isDiagonalBingo) {
-      return true;
+      hasBingo = true;
+      lines.push({ type: "diagonal", index: 0 });
     }
 
     // Check diagonal top-right to bottom-left
@@ -123,9 +138,10 @@ export class BingoCard {
       }
     }
     if (isDiagonalBingo) {
-      return true;
+      hasBingo = true;
+      lines.push({ type: "diagonal", index: 1 });
     }
 
-    return false;
+    return { hasBingo, lines };
   }
 }
